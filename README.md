@@ -6,4 +6,4 @@ Random useful Web3 tools I built with vibe coding.
 
 A list of all tools with descriptions can be found on the main page.
 
-[**➡️ View Tools**](./index.html)
+[**➡️ View Tools**](https://sebayaki.github.io/web3-tools/)
