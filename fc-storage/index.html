@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farcaster Storage Renter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f4f7; /* Lighter gray background */
+        }
+        /* Custom purple color similar to Warpcast */
+        .bg-warpcast-purple { background-color: #8a63d2; }
+        .hover\:bg-warpcast-purple-dark:hover { background-color: #734fb1; }
+        .text-warpcast-purple { color: #8a63d2; }
+        .ring-warpcast-purple:focus { --tw-ring-color: #8a63d2; }
+        .border-warpcast-purple { border-color: #8a63d2; }
+
+        /* Input styling */
+        input[type=text], input[type=number] {
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #1f2937;
+            outline: none;
+            box-shadow: none;
+        }
+         input[type=text]:focus, input[type=number]:focus {
+             border-color: #8a63d2;
+             box-shadow: 0 0 0 2px rgba(138, 99, 210, 0.3);
+         }
+
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* Button base style */
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            border: 1px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary {
+             background-color: #8a63d2;
+             color: white;
+             border-color: #8a63d2;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #734fb1;
+            border-color: #734fb1;
+        }
+         .btn-secondary {
+             background-color: #e5e7eb;
+             color: #374151;
+             border-color: #d1d5db;
+         }
+         .btn-secondary:hover:not(:disabled) {
+             background-color: #d1d5db;
+             border-color: #9ca3af;
+         }
+
+
+        /* Style for the iframe container */
+        #iframeContainer {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            overflow: hidden;
+            min-height: 400px;
+        }
+        iframe {
+            width: 100%;
+            height: 400px;
+            border: none;
+        }
+         /* Loading spinner */
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ffffff;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+         .loader-dark {
+             border: 3px solid rgba(0, 0, 0, 0.1);
+             border-top: 3px solid #4f46e5;
+         }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Input number arrows */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] {
+          -moz-appearance: textfield; /* Firefox */
+        }
+        /* Section divider */
+        hr {
+            border-top: 1px solid #d1d5db;
+            margin: 1.5rem 0;
+        }
+        /* Status message styling */
+        .status-message {
+            padding: 0.75rem;
+            margin-top: 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            border: 1px solid transparent;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+        .status-info { background-color: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+        .status-success { background-color: #f0fdf4; border-color: #bbf7d0; color: #16a34a; }
+        .status-warning { background-color: #fefce8; border-color: #fef08a; color: #ca8a04; }
+        .status-error { background-color: #fef2f2; border-color: #fecaca; color: #dc2626; }
+
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg w-full max-w-xl">
+        <h1 class="text-2xl font-semibold mb-8 text-center text-gray-900 tracking-tight">Farcaster Storage</h1>
+
+        <div class="mb-8">
+             <h2 class="text-lg font-semibold text-gray-800 mb-4">Rent Storage Units</h2>
+
+              <div class="mb-2">
+                 <label for="fidInputRent" class="block text-sm font-medium text-gray-700 mb-1">Farcaster ID (FID):</label>
+                 <input type="number" id="fidInputRent" name="fidInputRent" placeholder="Enter the FID to rent storage for" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-warpcast-purple focus:border-warpcast-purple">
+                 <p id="fidStatus" class="text-xs text-red-500 mt-1 h-4"></p> </div>
+
+             <div class="space-y-4 mb-6">
+                 <div>
+                    <label for="unitsInput" class="block text-sm font-medium text-gray-700 mb-1">Number of Units:</label>
+                    <input type="number" id="unitsInput" name="unitsInput" min="1" value="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-warpcast-purple focus:border-warpcast-purple">
+                 </div>
+                 <div id="priceStatus" class="text-sm text-gray-700 mt-2 text-center min-h-[40px] p-3 bg-gray-50 rounded-md border border-gray-200">
+                    <span class="italic">Loading price data...</span>
+                 </div>
+             </div>
+
+             <div id="walletConnectionSection" class="mb-6">
+                 <button id="connectButton" disabled class="btn btn-primary w-full"> Connect Wallet to Rent
+                 </button>
+                 <p id="walletStatus" class="text-sm text-gray-600 mt-2 text-center min-h-[20px]"></p>
+             </div>
+
+             <div id="rentActionSection" class="hidden space-y-4">
+                 <button id="rentButton" disabled class="btn btn-primary w-full">
+                     <span id="buttonTextRent">Rent Units</span>
+                     <span id="loadingSpinnerRent" class="loader hidden"></span>
+                 </button>
+             </div>
+
+             <div id="transactionStatus" class="mt-4"></div>
+
+        </div>
+
+        <hr />
+
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">View User Storage</h2>
+            <div class="mb-4">
+                <label for="usernameInputView" class="block text-sm font-medium text-gray-700 mb-1">Farcaster Username:</label>
+                <input type="text" id="usernameInputView" name="usernameInputView" placeholder="e.g., if, dwr" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-warpcast-purple focus:border-warpcast-purple">
+            </div>
+            <button id="loadButton" class="btn btn-secondary w-full">
+                 <span id="buttonTextView">Load User Storage Page</span>
+                 <span id="loadingSpinnerView" class="loader loader-dark hidden"></span>
+            </button>
+            <div id="resultAreaView" class="mt-4 min-h-[50px]">
+                <p id="placeholderTextView" class="text-center text-gray-500 text-sm italic">Enter username to load their caststorage.com page.</p>
+                <div id="iframeContainer" class="hidden">
+                    <iframe id="storageIframe" title="CastStorage User Page"></iframe>
+                </div>
+                 <p id="iframeWarning" class="text-xs text-gray-500 mt-2 text-center hidden">
+                    Note: Displaying content relies on caststorage.com allowing embedding via iframe.
+                 </p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Wait for DOMContentLoaded to ensure elements exist and Web3 is loaded
+        window.addEventListener('DOMContentLoaded', () => {
+
+            console.log("Script start. Checking Web3...");
+
+            // --- DOM Elements ---
+            const usernameInputView = document.getElementById('usernameInputView');
+            const loadButton = document.getElementById('loadButton');
+            const placeholderTextView = document.getElementById('placeholderTextView');
+            const iframeContainer = document.getElementById('iframeContainer');
+            const storageIframe = document.getElementById('storageIframe');
+            const iframeWarning = document.getElementById('iframeWarning');
+            const buttonTextView = document.getElementById('buttonTextView');
+            const loadingSpinnerView = document.getElementById('loadingSpinnerView');
+            const connectButton = document.getElementById('connectButton');
+            const walletStatus = document.getElementById('walletStatus');
+            const walletConnectionSection = document.getElementById('walletConnectionSection');
+            // const usernameInputRent = document.getElementById('usernameInputRent'); // Removed
+            // const getFidButton = document.getElementById('getFidButton'); // Removed
+            // const profileInfo = document.getElementById('profileInfo'); // Removed
+            const fidInputRent = document.getElementById('fidInputRent'); // New FID input
+            const fidStatus = document.getElementById('fidStatus'); // FID validation status
+            const unitsInput = document.getElementById('unitsInput');
+            const priceStatus = document.getElementById('priceStatus');
+            const rentActionSection = document.getElementById('rentActionSection');
+            const rentButton = document.getElementById('rentButton');
+            const transactionStatus = document.getElementById('transactionStatus');
+            const buttonTextRent = document.getElementById('buttonTextRent');
+            const loadingSpinnerRent = document.getElementById('loadingSpinnerRent');
+
+            // --- Web3.js Setup ---
+            let web3;
+            let publicWeb3;
+            let account;
+            let storageRegistryContractReader;
+            let storageRegistryContractWriter;
+            let currentFid = null; // Will be set from input
+            let currentUnitPriceWei = null;
+            let currentEthUsdPrice = null;
+            let walletCheckTimeout;
+
+            // --- Contract & Network Details ---
+            const storageRegistryAddress = '0x00000000fcCe7f938e7aE6D3c335bD6a1a7c593D';
+            const storageRegistryAbi = [
+                { "inputs": [], "name": "unitPrice", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" },
+                { "inputs": [ { "internalType": "uint256", "name": "fid", "type": "uint256" }, { "internalType": "uint256", "name": "units", "type": "uint256" } ], "name": "rent", "outputs": [ { "internalType": "uint256", "name": "overpayment", "type": "uint256" } ], "stateMutability": "payable", "type": "function" }
+            ];
+            const optimismChainId = 10;
+            const publicOptimismRpcUrl = 'https://optimism-rpc.publicnode.com';
+            const optimismExplorerUrl = 'https://optimistic.etherscan.io';
+            const coinbaseApiUrl = 'https://api.coinbase.com/v2/prices/ETH-USD/buy';
+            // const warpcastApiBase = 'https://client.warpcast.com/v2/user-by-username?username='; // Removed
+
+
+             // --- Helper Functions ---
+            function displayStatus(elementId, message, type = 'info') {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+                const sanitizedMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const linkifiedMessage = sanitizedMessage.replace(/(&lt;a\s+href=.*?&gt;)(.*?)(&lt;\/a&gt;)/g, (match, p1, p2, p3) => {
+                    const decodedP1 = p1.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+                    return `${decodedP1}${p2}</a>`;
+                });
+                element.innerHTML = `<div class="status-message status-${type}">${linkifiedMessage}</div>`;
+                element.classList.remove('hidden');
+            }
+             function clearStatus(elementId) {
+                const element = document.getElementById(elementId);
+                 if (element) { element.innerHTML = ''; }
+             }
+
+            async function fetchEthUsdPrice() {
+                try {
+                    const response = await fetch(coinbaseApiUrl);
+                    if (!response.ok) throw new Error(`Coinbase API Error (${response.status})`);
+                    const data = await response.json();
+                    if (data?.data?.amount) {
+                        currentEthUsdPrice = parseFloat(data.data.amount);
+                        console.log(`Fetched ETH/USD price: ${currentEthUsdPrice}`);
+                        updatePriceDisplay();
+                    } else { throw new Error("Invalid response structure from Coinbase API"); }
+                } catch (error) {
+                    console.error("Error fetching ETH/USD price:", error);
+                    const priceStatusDiv = document.getElementById('priceStatus');
+                    if (priceStatusDiv) priceStatusDiv.innerHTML += `<br/><span class="text-xs text-red-500">(Could not fetch USD price)</span>`;
+                    currentEthUsdPrice = null;
+                }
+            }
+
+            async function fetchUnitPrice() {
+                 if (!storageRegistryContractReader) {
+                     console.error("Public provider/contract reader not initialized.");
+                     priceStatus.textContent = 'Error: Cannot connect to Optimism RPC.';
+                     priceStatus.className = 'text-sm text-red-600 mt-2 text-center min-h-[40px]';
+                     return;
+                 }
+                 priceStatus.innerHTML = `<span class="italic">Fetching unit price...</span>`;
+                 try {
+                    const priceWeiString = await storageRegistryContractReader.methods.unitPrice().call();
+                    currentUnitPriceWei = priceWeiString;
+                    console.log(`Fetched unit price (Wei): ${currentUnitPriceWei}`);
+                    updatePriceDisplay();
+                 } catch (error) {
+                    console.error("Error fetching unit price:", error);
+                    priceStatus.textContent = `Error fetching unit price: ${error.message}`;
+                    priceStatus.className = 'text-sm text-red-600 mt-2 text-center min-h-[40px]';
+                    currentUnitPriceWei = null;
+                    rentButton.disabled = true;
+                 }
+            }
+
+            function updatePriceDisplay() {
+                if (currentUnitPriceWei === null || typeof Web3 === 'undefined') return;
+
+                const units = parseInt(unitsInput.value) || 0;
+                const priceEth = Web3.utils.fromWei(currentUnitPriceWei, 'ether');
+                let displayHtml = `<span class="font-medium">1 Unit ≈ ${parseFloat(priceEth).toFixed(6)} ETH</span>`; // Make base price bold
+
+                if (currentEthUsdPrice !== null) {
+                     const priceUsdPerUnit = parseFloat(priceEth) * currentEthUsdPrice;
+                     displayHtml += ` <span class="text-gray-500">(~$${priceUsdPerUnit.toFixed(2)} USD)</span>`; // Softer color for USD
+                } else { displayHtml += ` <span class="text-xs italic text-gray-400">(USD price unavailable)</span>`; }
+
+                if (units > 0) {
+                    const totalPriceWei = BigInt(currentUnitPriceWei) * BigInt(units);
+                    const totalPriceEth = Web3.utils.fromWei(totalPriceWei.toString(), 'ether');
+                    displayHtml += `<br/><span class="font-medium">Total for ${units} unit(s): ≈ ${parseFloat(totalPriceEth).toFixed(6)} ETH</span>`;
+                     if (currentEthUsdPrice !== null) {
+                        const totalPriceUsd = parseFloat(totalPriceEth) * currentEthUsdPrice;
+                        displayHtml += ` <span class="text-gray-500">(~$${totalPriceUsd.toFixed(2)} USD)</span>`;
+                     }
+                     displayHtml += ` <span class="text-xs italic text-gray-400">(+ gas fees)</span>`;
+                } else { displayHtml += `<br/><span class="text-xs italic text-red-500">Enter units >= 1</span>`; } // Error color for invalid units
+
+                priceStatus.innerHTML = displayHtml;
+                priceStatus.className = 'text-sm text-gray-700 mt-2 text-center min-h-[40px] p-3 bg-gray-50 rounded-md border border-gray-200'; // Reset class with styling
+
+                // Update rent button state based on FID input validity as well
+                validateAndUpdateRentButton();
+            }
+
+            // --- Validate FID and update Rent Button State ---
+            function validateAndUpdateRentButton() {
+                const fidValue = fidInputRent.value.trim();
+                const unitsValue = parseInt(unitsInput.value) || 0;
+                let isValidFid = false;
+                if (fidValue && !isNaN(parseInt(fidValue)) && parseInt(fidValue) > 0) {
+                    currentFid = fidValue; // Update currentFid when valid
+                    fidStatus.textContent = ''; // Clear validation error
+                    isValidFid = true;
+                } else {
+                    currentFid = null; // Clear FID if invalid
+                    if (fidValue !== '') { // Only show error if input is not empty but invalid
+                       fidStatus.textContent = 'Please enter a valid positive FID number.';
+                    } else {
+                       fidStatus.textContent = ''; // Clear error if empty
+                    }
+                }
+
+                rentButton.disabled = !currentUnitPriceWei || !isValidFid || !web3 || !account || unitsValue <= 0;
+            }
+
+
+            // --- Initialize Providers & Fetch Prices ---
+            async function initializeApp() {
+                 if (typeof Web3 === 'undefined') {
+                    console.error("Web3.js library not loaded!");
+                    walletStatus.textContent = 'Error: Web3.js library failed to load.';
+                    walletStatus.className = 'text-sm text-red-600 mt-2 text-center';
+                    connectButton.disabled = true;
+                    return;
+                 }
+                 console.log("Web3 loaded.");
+
+                // Init Public Provider
+                try {
+                    publicWeb3 = new Web3(publicOptimismRpcUrl);
+                    storageRegistryContractReader = new publicWeb3.eth.Contract(storageRegistryAbi, storageRegistryAddress);
+                    console.log("Public provider initialized.");
+                    await fetchUnitPrice();
+                    await fetchEthUsdPrice();
+                } catch (e) {
+                    console.error("Failed to initialize public provider:", e);
+                    priceStatus.textContent = 'Error initializing public RPC connection.';
+                    priceStatus.className = 'text-sm text-red-600 mt-2 text-center min-h-[40px]';
+                }
+
+                // Function to check for wallet provider after a delay
+                const checkWalletProvider = async () => {
+                    clearTimeout(walletCheckTimeout);
+                    console.log("Checking for window.ethereum...");
+                    if (typeof window.ethereum !== 'undefined') {
+                        console.log("Wallet provider (window.ethereum) detected.");
+                        connectButton.disabled = false; // Enable connect button
+                        walletStatus.textContent = ''; // Clear "Checking for wallet..."
+                        walletStatus.className = 'text-sm text-gray-600 mt-2 text-center min-h-[20px]';
+                        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+                        window.ethereum.on('accountsChanged', handleAccountsChanged);
+                        window.ethereum.removeListener('chainChanged', handleChainChanged);
+                        window.ethereum.on('chainChanged', handleChainChanged);
+
+                        // Check if already connected
+                        try {
+                            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                            if (accounts && accounts.length > 0) {
+                                console.log("Wallet already connected:", accounts[0]);
+                                await connectWallet(true); // Connect without requiring button click
+                            } else {
+                                console.log("Wallet detected, but not connected.");
+                                walletConnectionSection.classList.remove('hidden'); // Ensure connect button is visible
+                                rentActionSection.classList.add('hidden'); // Hide rent button
+                            }
+                        } catch (err) {
+                            console.error("Error checking existing connection:", err);
+                            walletConnectionSection.classList.remove('hidden'); // Ensure connect button is visible
+                            rentActionSection.classList.add('hidden'); // Hide rent button
+                        }
+
+                    } else {
+                        console.log("No Ethereum wallet (like MetaMask) detected after delay.");
+                        walletStatus.textContent = 'No browser wallet detected. Please install MetaMask or similar to enable renting.';
+                        walletStatus.className = 'text-sm text-orange-600 mt-2 text-center min-h-[20px]';
+                        connectButton.disabled = true;
+                        walletConnectionSection.classList.remove('hidden'); // Show connect button section (disabled)
+                        rentActionSection.classList.add('hidden'); // Hide rent button
+                    }
+                };
+                walletCheckTimeout = setTimeout(checkWalletProvider, 500);
+            }
+            initializeApp();
+
+
+            // --- Wallet Connection Logic (consolidated) ---
+            async function connectWallet(isAutoConnect = false) {
+                 if (typeof window.ethereum === 'undefined') {
+                    if (!isAutoConnect) {
+                        walletStatus.textContent = 'Wallet provider not available. Is your wallet installed and enabled?';
+                        walletStatus.className = 'text-sm text-red-600 mt-2 text-center min-h-[20px]';
+                    }
+                    return false;
+                }
+
+                try {
+                    if (!isAutoConnect) {
+                        walletStatus.textContent = 'Connecting...';
+                        walletStatus.className = 'text-sm text-gray-600 mt-2 text-center min-h-[20px]';
+                    }
+
+                    let accounts;
+                    if (isAutoConnect) {
+                        accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    } else {
+                        accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    }
+
+                    if (!accounts || accounts.length === 0) throw new Error("No accounts returned from wallet.");
+                    account = accounts[0];
+                    console.log("Connected account:", account);
+
+                    web3 = new Web3(window.ethereum);
+                    storageRegistryContractWriter = new web3.eth.Contract(storageRegistryAbi, storageRegistryAddress);
+
+                    const chainId = await web3.eth.getChainId();
+                    console.log("Current chain ID:", chainId);
+
+                    if (Number(chainId) !== optimismChainId) {
+                         try {
+                            if (!isAutoConnect) walletStatus.textContent = 'Requesting network switch to Optimism...';
+                            await window.ethereum.request({
+                                method: 'wallet_switchEthereumChain',
+                                params: [{ chainId: `0x${optimismChainId.toString(16)}` }],
+                            });
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                            const newChainId = await web3.eth.getChainId();
+                            if (Number(newChainId) !== optimismChainId) throw new Error(`Failed to switch to Optimism.`);
+
+                            walletStatus.textContent = `Connected: ${account.slice(0, 6)}...${account.slice(-4)} (Optimism)`;
+                            walletStatus.className = 'text-sm text-green-600 mt-2 text-center min-h-[20px]';
+                            walletConnectionSection.classList.add('hidden');
+                            rentActionSection.classList.remove('hidden');
+                            // getFidButton.disabled = false; // Removed FID button
+                            validateAndUpdateRentButton(); // Check rent button status
+                            return true;
+
+                         } catch (switchError) {
+                             console.error("Failed to switch network:", switchError);
+                             if (switchError.code === 4902) { throw new Error(`Optimism network not found in wallet.`); }
+                             else if (switchError.code === -32002 || switchError.message?.includes('pending')) { throw new Error('Network switch request pending.'); }
+                             else { throw new Error(`Please switch wallet to Optimism network.`); }
+                         }
+                    } else {
+                        walletStatus.textContent = `Connected: ${account.slice(0, 6)}...${account.slice(-4)} (Optimism)`;
+                        walletStatus.className = 'text-sm text-green-600 mt-2 text-center min-h-[20px]';
+                        walletConnectionSection.classList.add('hidden');
+                        rentActionSection.classList.remove('hidden');
+                        // getFidButton.disabled = false; // Removed FID button
+                        validateAndUpdateRentButton(); // Check rent button status
+                        return true;
+                    }
+
+                } catch (error) {
+                    console.error("Wallet connection error:", error);
+                    if (!isAutoConnect) {
+                        if (error.code === -32002 || error.message?.includes('pending')) { walletStatus.textContent = `Connection request pending. Check wallet.`; }
+                        else if (error.code === 4001) { walletStatus.textContent = `Connection rejected. Try again.`; }
+                        else { walletStatus.textContent = `Connection failed: ${error.message}`; }
+                        walletStatus.className = 'text-sm text-red-600 mt-2 text-center min-h-[20px]';
+                    }
+                    walletConnectionSection.classList.remove('hidden'); // Ensure connect button is visible on error
+                    rentActionSection.classList.add('hidden');
+                    return false;
+                }
+            }
+            connectButton.addEventListener('click', () => connectWallet(false));
+
+
+             // Handler functions for wallet events
+            function handleAccountsChanged(accounts) {
+                console.log("Account changed:", accounts);
+                if (accounts.length === 0) {
+                    walletStatus.textContent = 'Wallet disconnected. Please connect again.';
+                    walletStatus.className = 'text-sm text-orange-600 mt-2 text-center min-h-[20px]';
+                    resetRentState();
+                } else { window.location.reload(); }
+            }
+            function handleChainChanged(chainId) {
+                console.log("Network changed:", chainId);
+                window.location.reload();
+            }
+            function resetRentState() {
+                 walletConnectionSection.classList.remove('hidden');
+                 rentActionSection.classList.add('hidden');
+                 connectButton.textContent = 'Connect Wallet to Rent';
+                 connectButton.disabled = typeof window.ethereum === 'undefined';
+                 web3 = null;
+                 account = null;
+                 storageRegistryContractWriter = null;
+                 currentFid = null;
+                 fidInputRent.value = ''; // Clear FID input
+                 fidStatus.textContent = ''; // Clear FID status
+                 clearStatus('transactionStatus');
+                 rentButton.disabled = true;
+                 // getFidButton.disabled = true; // Removed
+                 initializeApp(); // Re-initialize
+            }
+
+
+            // --- Update state when FID input changes ---
+            fidInputRent.addEventListener('input', validateAndUpdateRentButton);
+
+
+            // --- Update total price display when units change ---
+            unitsInput.addEventListener('input', updatePriceDisplay);
+
+
+            // --- Rent Logic ---
+            rentButton.addEventListener('click', async () => {
+                const unitsToRent = parseInt(unitsInput.value);
+                const fidToRent = fidInputRent.value.trim(); // Get FID from input
+
+                clearStatus('transactionStatus');
+
+                // Validate FID again before sending
+                if (!fidToRent || isNaN(parseInt(fidToRent)) || parseInt(fidToRent) <= 0) {
+                    displayStatus('transactionStatus', 'Please enter a valid positive FID number.', 'warning');
+                    fidStatus.textContent = 'Please enter a valid positive FID number.'; // Also show inline
+                    return;
+                }
+                currentFid = fidToRent; // Ensure currentFid is set
+
+                if (!web3 || !account || !storageRegistryContractWriter) { displayStatus('transactionStatus', 'Wallet not connected or contract not initialized correctly.', 'warning'); return; }
+                if (currentUnitPriceWei === null) { displayStatus('transactionStatus', 'Could not retrieve unit price. Please wait or refresh.', 'warning'); return; }
+                if (!unitsToRent || unitsToRent <= 0) { displayStatus('transactionStatus', 'Please enter a valid number of units (>= 1).', 'warning'); return; }
+
+                rentButton.disabled = true;
+                // getFidButton.disabled = true; // Removed
+                loadingSpinnerRent.classList.remove('hidden');
+                buttonTextRent.textContent = '';
+                displayStatus('transactionStatus', 'Preparing transaction...', 'info');
+
+                try {
+                    const payableAmountWei = (BigInt(currentUnitPriceWei) * BigInt(unitsToRent)).toString();
+
+                    displayStatus('transactionStatus', 'Please confirm the transaction in your wallet...', 'info');
+
+                    storageRegistryContractWriter.methods.rent(currentFid, unitsToRent)
+                        .send({ from: account, value: payableAmountWei })
+                        .on('transactionHash', (hash) => {
+                            console.log("Transaction Hash:", hash);
+                            const explorerLink = `<a href="${optimismExplorerUrl}/tx/${hash}" target="_blank" rel="noopener noreferrer" class="underline hover:text-blue-700">View on Etherscan</a>`;
+                            displayStatus('transactionStatus', `Transaction sent! ${explorerLink}. Waiting for confirmation...`, 'info');
+                        })
+                        .on('receipt', (receipt) => {
+                            console.log("Transaction Receipt:", receipt);
+                            const successLink = `<a href="${optimismExplorerUrl}/tx/${receipt.transactionHash}" target="_blank" rel="noopener noreferrer" class="underline hover:text-green-700">View on Etherscan</a>`;
+                            if (receipt.status) {
+                                const successMessage = `Transaction confirmed successfully! Rented ${unitsToRent} unit(s) for FID ${currentFid}. ${successLink} (Block: ${receipt.blockNumber})`;
+                                displayStatus('transactionStatus', successMessage , 'success');
+                                // Reset button state after success
+                                // getFidButton.disabled = !account; // Removed
+                                rentButton.disabled = !currentUnitPriceWei || !currentFid || !account; // Re-enable rent button based on state
+                                loadingSpinnerRent.classList.add('hidden');
+                                buttonTextRent.textContent = 'Rent Units';
+
+                            } else {
+                                const failureLink = `<a href="${optimismExplorerUrl}/tx/${receipt.transactionHash}" target="_blank" rel="noopener noreferrer" class="underline hover:text-red-700">View on Etherscan</a>`;
+                                throw new Error(`Transaction failed on-chain (status false). ${failureLink} for details.`);
+                            }
+                        })
+                        .on('error', (error, receipt) => { // Handle errors during sending/confirmation
+                            console.error("Renting transaction error:", error);
+                            let errorMessage = "An unknown transaction error occurred.";
+                             if (error.code === 4001 || error.message?.includes('User rejected')) { errorMessage = 'Transaction rejected in wallet.'; }
+                             else if (error.message?.includes('insufficient funds')) { errorMessage = 'Insufficient ETH balance for transaction cost + gas.'; }
+                             else if (error.message) { errorMessage = error.message; }
+
+                             let errorLink = "";
+                             const txHash = receipt?.transactionHash;
+                             if (txHash) { errorLink = `<a href="${optimismExplorerUrl}/tx/${txHash}" target="_blank" rel="noopener noreferrer" class="underline hover:text-red-700">View on Etherscan</a>`; }
+                            displayStatus('transactionStatus', `Renting failed: ${errorMessage} ${errorLink}`, 'error');
+
+                            // Re-enable buttons after error
+                            // getFidButton.disabled = !account; // Removed
+                            rentButton.disabled = !currentUnitPriceWei || !currentFid || !account;
+                            loadingSpinnerRent.classList.add('hidden');
+                            buttonTextRent.textContent = 'Rent Units';
+                        });
+
+                } catch (error) { // Catch errors before sending
+                    console.error("Renting preparation error:", error);
+                     let errorMessage = "An unknown error occurred preparing the transaction.";
+                     if (error.code === 4001 || error.message?.includes('User rejected')) { errorMessage = 'Transaction rejected in wallet.'; }
+                     else if (error.message) { errorMessage = error.message; }
+                    displayStatus('transactionStatus', `Renting failed: ${errorMessage}`, 'error');
+                    // Re-enable buttons after error
+                    // getFidButton.disabled = !account; // Removed
+                    rentButton.disabled = !currentUnitPriceWei || !currentFid || !account;
+                    loadingSpinnerRent.classList.add('hidden');
+                    buttonTextRent.textContent = 'Rent Units';
+                }
+            });
+
+
+            // --- Iframe Loading Logic (View Section) ---
+            loadButton.addEventListener('click', () => {
+                const username = usernameInputView.value.trim().toLowerCase();
+
+                placeholderTextView.classList.add('hidden');
+                iframeContainer.classList.add('hidden');
+                iframeWarning.classList.add('hidden');
+                loadButton.disabled = true;
+                buttonTextView.textContent = 'Loading...';
+                loadingSpinnerView.classList.remove('hidden');
+
+                if (!username) {
+                    placeholderTextView.textContent = 'Please enter a username.';
+                    placeholderTextView.classList.remove('hidden');
+                    loadButton.disabled = false;
+                    buttonTextView.textContent = 'Load User Storage Page';
+                    loadingSpinnerView.classList.add('hidden');
+                    return;
+                }
+
+                const iframeSrc = `https://caststorage.com/?username=${username}`;
+                storageIframe.src = iframeSrc;
+                iframeContainer.classList.remove('hidden');
+                iframeWarning.classList.remove('hidden');
+
+                // Reset button after a delay, assuming iframe loads (best effort)
+                setTimeout(() => {
+                     loadButton.disabled = false;
+                     buttonTextView.textContent = 'Load User Storage Page';
+                     loadingSpinnerView.classList.add('hidden');
+                }, 1500);
+            });
+
+        }); // End DOMContentLoaded listener
+    </script>
+
+</body>
+</html>

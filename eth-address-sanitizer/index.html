@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Ethereum Address Sanitizer</title>
+    <!-- Include js-sha3 from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/js-sha3@0.8.0/build/sha3.min.js"></script>
+  </head>
+  <body>
+    <h1>Ethereum Address Sanitizer</h1>
+    <p>Paste your newline-separated Ethereum addresses below:</p>
+    <textarea id="input" rows="10" cols="50" placeholder="0x433F12B3204cE57E9a95dFC5C14092889F1Aef10&#10;0x3768E07A2960Ef1626008322C921b60431aF3e5B"></textarea>
+    <br/><br/>
+    <button onclick="sanitizeAddresses()">Sanitize</button>
+    <h2>Sanitized Addresses:</h2>
+    <textarea id="output" rows="10" cols="50" readonly></textarea>
+
+    <script>
+      // This function converts an Ethereum address to its EIP-55 checksummed version.
+      function toChecksumAddress(address) {
+        // Remove the 0x prefix (if present) and convert to lower-case.
+        var addr = address.toLowerCase().replace(/^0x/, '');
+        // Compute the Keccak-256 hash of the lower-case address.
+        var hash = keccak256(addr);
+        var ret = '0x';
+        // Iterate over each character of the address.
+        for (var i = 0; i < addr.length; i++) {
+          // If the ith nibble of the hash is >= 8, the character should be uppercase.
+          if (parseInt(hash[i], 16) >= 8) {
+            ret += addr[i].toUpperCase();
+          } else {
+            ret += addr[i];
+          }
+        }
+        return ret;
+      }
+
+      // This function reads the addresses from the input textarea,
+      // converts each one to the checksum format, and outputs the result.
+      function sanitizeAddresses() {
+        var inputText = document.getElementById("input").value;
+        var lines = inputText.split("\n");
+        var sanitized = lines.map(function(line) {
+          var trimmed = line.trim();
+          if (trimmed === "") return "";
+          try {
+            return toChecksumAddress(trimmed);
+          } catch (err) {
+            return "ERROR with: " + trimmed;
+          }
+        }).join("\n");
+        document.getElementById("output").value = sanitized;
+      }
+    </script>
+  </body>
+</html>

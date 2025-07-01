@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farcaster Username Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        /* Custom color styles to match #7c65c1 */
+        .btn-custom {
+            background-color: #7c65c1;
+        }
+        .btn-custom:hover {
+            background-color: #6a55a8; /* A darker shade for hover */
+        }
+        .ring-custom:focus {
+            --tw-ring-opacity: 1;
+            --tw-ring-color: rgba(124, 101, 193, 0.5);
+        }
+        .text-custom {
+            color: #7c65c1;
+        }
+        .link-custom {
+            color: #a491e0;
+        }
+        .link-custom:hover {
+            color: #c0b3ef;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl mx-auto p-6 md:p-8 bg-gray-800 rounded-xl shadow-2xl">
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-white">Farcaster Username Finder</h1>
+            <p class="text-gray-400 mt-2 px-4">
+                Find Farcaster usernames from wallet addresses using the <a href="https://github.com/Steemhunt/airdrop-whitelist/blob/main/whitelist/hunt-town/hunt-town-top-builders-by-score.json" target="_blank" rel="noopener noreferrer" class="link-custom hover:underline">Hunt Town Top Builder List</a>.
+            </p>
+        </div>
+
+        <!-- Input Area -->
+        <div>
+            <label for="wallet-addresses" class="block text-sm font-medium text-gray-300 mb-2">Enter Wallet Addresses (one per line):</label>
+            <textarea id="wallet-addresses" rows="8" class="w-full p-4 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 ring-custom focus:border-transparent transition duration-200 text-gray-200 font-mono" placeholder="0x78288587be28B78bEFEe7923423be6384b4E3b4E&#10;0xa70b06a77d6a0A846a8c85D603049aB609757EF4&#10;..."></textarea>
+        </div>
+
+        <!-- Action Button -->
+        <div class="mt-6 text-center">
+            <button id="find-usernames-btn" class="w-full md:w-auto btn-custom text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105 duration-300 ease-in-out shadow-lg">
+                Find Usernames
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-container" class="mt-8">
+            <!-- Loading Indicator -->
+            <div id="loading" class="hidden text-center text-gray-400">
+                <svg class="animate-spin h-6 w-6 text-custom mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="mt-2">Fetching data and searching...</p>
+            </div>
+            <!-- Error Message -->
+            <div id="error-message" class="hidden text-center bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg"></div>
+            <!-- Results List -->
+            <div id="results-list" class="space-y-3"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const findBtn = document.getElementById('find-usernames-btn');
+        const addressesInput = document.getElementById('wallet-addresses');
+        const resultsContainer = document.getElementById('results-list');
+        const loadingIndicator = document.getElementById('loading');
+        const errorMessageDiv = document.getElementById('error-message');
+
+        // The URL for the whitelist JSON data
+        const DATA_URL = 'https://raw.githubusercontent.com/Steemhunt/airdrop-whitelist/refs/heads/main/whitelist/hunt-town/hunt-town-top-builders-by-score.json';
+
+        // --- Main Logic ---
+        findBtn.addEventListener('click', async () => {
+            // 1. Reset UI
+            resultsContainer.innerHTML = '';
+            errorMessageDiv.classList.add('hidden');
+            errorMessageDiv.textContent = '';
+            loadingIndicator.classList.remove('hidden');
+
+            // 2. Get and clean input addresses
+            const inputAddresses = addressesInput.value
+                .split('\n')
+                .map(addr => addr.trim())
+                .filter(addr => addr.length > 0);
+
+            if (inputAddresses.length === 0) {
+                loadingIndicator.classList.add('hidden');
+                showError('Please enter at least one wallet address.');
+                return;
+            }
+
+            try {
+                // 3. Fetch and process the whitelist data
+                const response = await fetch(DATA_URL);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch data. Status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                // Create a Map for efficient lookups (O(1) average time complexity)
+                // We store addresses in lowercase to ensure case-insensitive matching.
+                const walletMap = new Map(
+                    data.wallets.map(item => [item.walletAddress.toLowerCase(), item.username])
+                );
+
+                // 4. Find and display results
+                inputAddresses.forEach(address => {
+                    const username = walletMap.get(address.toLowerCase());
+                    const resultElement = document.createElement('div');
+                    resultElement.className = 'bg-gray-700/50 p-4 rounded-lg flex items-center justify-between';
+
+                    if (username) {
+                        // If a username is found, create a link to their Farcaster profile
+                        resultElement.innerHTML = `
+                            <span class="text-gray-300 font-mono text-sm break-all pr-2">${address}</span>
+                            <a href="http://farcaster.xyz/${username}" target="_blank" rel="noopener noreferrer" class="bg-green-500/20 hover:bg-green-600/30 text-green-300 text-xs font-semibold px-3 py-1 rounded-full transition-colors duration-200 flex-shrink-0">
+                                @${username}
+                            </a>
+                        `;
+                    } else {
+                        // If not found, display the "Not Found" message
+                        resultElement.innerHTML = `
+                            <span class="text-gray-400 font-mono text-sm break-all pr-2">${address}</span>
+                            <span class="bg-red-500/20 text-red-300 text-xs font-semibold px-3 py-1 rounded-full flex-shrink-0">Not Found</span>
+                        `;
+                    }
+                    resultsContainer.appendChild(resultElement);
+                });
+
+            } catch (error) {
+                console.error("An error occurred:", error);
+                showError('Could not retrieve or process the user data. Please try again later.');
+            } finally {
+                // 5. Hide loading indicator
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+
+        // --- Helper Functions ---
+        function showError(message) {
+            errorMessageDiv.textContent = message;
+            errorMessageDiv.classList.remove('hidden');
+        }
+    </script>
+
+</body>
+</html>

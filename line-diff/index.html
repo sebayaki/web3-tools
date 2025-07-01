@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List Operations Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-mono-custom {
+            font-family: 'Roboto Mono', monospace;
+        }
+        #copyTooltip {
+            transition: opacity 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
+
+        <div class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">List Operations Tool</h1>
+            <p class="text-lg text-gray-600 mt-2">Perform set operations on two lists</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label for="inputA" class="block text-lg font-medium text-gray-700">List A</label>
+                    <span id="lineCountA" class="text-sm text-gray-500 font-mono-custom">Lines: 0</span>
+                </div>
+                <textarea id="inputA" rows="10" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out font-mono-custom" style="font-size: 0.825em;" placeholder="Enter one item per line..."></textarea>
+            </div>
+            <div>
+                 <div class="flex justify-between items-center mb-2">
+                    <label for="inputB" class="block text-lg font-medium text-gray-700">List B</label>
+                    <span id="lineCountB" class="text-sm text-gray-500 font-mono-custom">Lines: 0</span>
+                </div>
+                <textarea id="inputB" rows="10" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out font-mono-custom" style="font-size: 0.825em;" placeholder="Enter one item per line..."></textarea>
+            </div>
+        </div>
+
+        <div class="text-center mb-8">
+            <div class="flex flex-wrap justify-center gap-3">
+                <button data-op="difference" class="op-btn bg-blue-600 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-transform transform hover:scale-105">A - B</button>
+                <button data-op="intersection" class="op-btn bg-green-600 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition-transform transform hover:scale-105">A &amp;&amp; B</button>
+                <button data-op="union" class="op-btn bg-purple-600 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 transition-transform transform hover:scale-105">Unique (A+B)</button>
+                <button data-op="uniqueA" class="op-btn bg-yellow-600 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:bg-yellow-700 focus:outline-none focus:ring-4 focus:ring-yellow-300 transition-transform transform hover:scale-105">Unique (A)</button>
+            </div>
+        </div>
+
+        <div id="resultContainer" class="hidden">
+            <h2 id="resultTitle" class="text-2xl font-semibold text-gray-800 mb-3">Result</h2>
+            <pre id="resultSummary" class="text-gray-700 bg-gray-100 p-4 rounded-lg mb-4 whitespace-pre-wrap word-wrap font-mono-custom"></pre>
+            <div class="bg-white p-4 border border-gray-200 rounded-lg shadow-sm relative">
+                <button id="copyBtn" title="Copy to clipboard" class="absolute top-2 right-2 p-2 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                    <svg id="copyIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <svg id="checkIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                </button>
+                <span id="copyTooltip" class="absolute top-2 right-12 bg-gray-700 text-white text-xs font-bold rounded-md py-1 px-2 opacity-0 pointer-events-none">Copied!</span>
+                <pre id="result" class="text-gray-700 whitespace-pre-wrap word-wrap font-mono-custom" style="font-size: 0.825em;"></pre>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const inputA = document.getElementById('inputA');
+        const inputB = document.getElementById('inputB');
+        const lineCountAEl = document.getElementById('lineCountA');
+        const lineCountBEl = document.getElementById('lineCountB');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultTitleEl = document.getElementById('resultTitle');
+        const resultSummaryEl = document.getElementById('resultSummary');
+        const resultEl = document.getElementById('result');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyIcon = document.getElementById('copyIcon');
+        const checkIcon = document.getElementById('checkIcon');
+        const copyTooltip = document.getElementById('copyTooltip');
+
+        /**
+         * Takes a list of strings and returns a list of unique items,
+         * preserving the case of the first occurrence.
+         */
+        function getUniqueItems(list) {
+            const seen = new Map();
+            list.forEach(item => {
+                const lowerItem = item.toLowerCase();
+                if (!seen.has(lowerItem)) {
+                    seen.set(lowerItem, item);
+                }
+            });
+            return Array.from(seen.values());
+        }
+
+        /**
+         * Main calculation function that is triggered by the operation buttons.
+         * @param {string} operation - The type of operation to perform.
+         */
+        function calculate(operation) {
+            const listA = inputA.value.split('\n').map(item => item.trim()).filter(item => item);
+            const listB = inputB.value.split('\n').map(item => item.trim()).filter(item => item);
+            let result = [];
+            let summaryInfo = { operation, countA: listA.length, countB: listB.length };
+
+            // For case-insensitive comparisons
+            const setA_lower = new Set(listA.map(i => i.toLowerCase()));
+            const setB_lower = new Set(listB.map(i => i.toLowerCase()));
+
+            switch (operation) {
+                case 'difference':
+                    result = listA.filter(item => !setB_lower.has(item.toLowerCase()));
+                    break;
+                case 'intersection':
+                    const intersectionList = listA.filter(item => setB_lower.has(item.toLowerCase()));
+                    result = getUniqueItems(intersectionList);
+                    break;
+                case 'union':
+                    result = getUniqueItems([...listA, ...listB]);
+                    break;
+                case 'uniqueA':
+                    result = getUniqueItems(listA);
+                    break;
+            }
+            displayResult(result, summaryInfo);
+        }
+
+        /**
+         * Renders the result summary and details in the UI.
+         * @param {string[]} resultArray - The final array of strings to display.
+         * @param {object} summaryInfo - An object with details about the operation.
+         */
+        function displayResult(resultArray, summaryInfo) {
+            const { operation, countA } = summaryInfo;
+            const resultCount = resultArray.length;
+            let summaryText = '', resultTitle = 'Result';
+
+            switch (operation) {
+                case 'difference':
+                    resultTitle = 'Difference (A - B)';
+                    const removedCount = countA - resultCount;
+                    summaryText = `Result: ${resultCount} lines (${removedCount} from A removed)`;
+                    break;
+                case 'intersection':
+                    resultTitle = 'Intersection (A && B)';
+                    summaryText = `Result: ${resultCount} common lines`;
+                    break;
+                case 'union':
+                    resultTitle = 'Union (Unique A+B)';
+                    summaryText = `Result: ${resultCount} unique lines`;
+                    break;
+                case 'uniqueA':
+                    resultTitle = 'Unique (A)';
+                    const duplicateCount = countA - resultCount;
+                    summaryText = `Result: ${resultCount} unique lines (${duplicateCount} duplicates removed)`;
+                    break;
+            }
+            resultTitleEl.textContent = resultTitle;
+            resultSummaryEl.textContent = summaryText;
+            resultEl.textContent = resultArray.length > 0 ? resultArray.join('\n') : "No items in result.";
+            resultContainer.classList.remove('hidden');
+        }
+
+        // --- Line Counting ---
+        function countValidLines(text) {
+            if (!text) return 0;
+            return text.split('\n').filter(line => line.trim() !== '').length;
+        }
+        function updateLineCounts() {
+            lineCountAEl.textContent = `Lines: ${countValidLines(inputA.value)}`;
+            lineCountBEl.textContent = `Lines: ${countValidLines(inputB.value)}`;
+        }
+
+        // --- Clipboard ---
+        function copyResultToClipboard() {
+            const textToCopy = resultEl.textContent;
+            if (!textToCopy || textToCopy === "No items in result.") return;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            tempTextArea.style.position = 'absolute';
+            tempTextArea.style.left = '-9999px';
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            try {
+                document.execCommand('copy');
+                copyIcon.classList.add('hidden');
+                checkIcon.classList.remove('hidden');
+                copyTooltip.classList.remove('opacity-0');
+                setTimeout(() => {
+                    copyIcon.classList.remove('hidden');
+                    checkIcon.classList.add('hidden');
+                    copyTooltip.classList.add('opacity-0');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            } finally {
+                document.body.removeChild(tempTextArea);
+            }
+        }
+
+        // --- Event Listeners ---
+        document.querySelectorAll('.op-btn').forEach(button => {
+            button.addEventListener('click', () => calculate(button.dataset.op));
+        });
+        copyBtn.addEventListener('click', copyResultToClipboard);
+        inputA.addEventListener('input', updateLineCounts);
+        inputB.addEventListener('input', updateLineCounts);
+        updateLineCounts(); // Initial call
+    </script>
+</body>
+</html>
