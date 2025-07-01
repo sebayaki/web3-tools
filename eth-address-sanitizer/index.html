@@ -1,28 +1,162 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Ethereum Address Sanitizer</title>
     <!-- Include js-sha3 from a CDN -->
     <script src="https://cdn.jsdelivr.net/npm/js-sha3@0.8.0/build/sha3.min.js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+          "Segoe UI Symbol";
+        background-color: #f0f2f5;
+        color: #333;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        padding: 2rem;
+      }
+      .container {
+        width: 100%;
+        max-width: 600px;
+        text-align: center;
+      }
+      h1 {
+        color: #1c1e21;
+      }
+      p,
+      h2 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+        text-align: left;
+      }
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 14px;
+        box-sizing: border-box; /* To include padding in width */
+        resize: vertical;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      #output {
+        background-color: #e9ecef;
+      }
+      .textarea-container {
+        position: relative;
+      }
+      #copy-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        z-index: 10;
+        transition: background-color 0.3s ease;
+      }
+      #copy-button:hover {
+        background-color: #0056b3;
+      }
+      #copy-tooltip {
+        visibility: hidden;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 4px;
+        padding: 5px 10px;
+        position: absolute;
+        z-index: 11;
+        top: 10px;
+        right: 95px; /* Position to the left of the button */
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 14px;
+      }
+      #copy-tooltip.visible {
+        visibility: visible;
+        opacity: 1;
+      }
+    </style>
   </head>
   <body>
-    <h1>Ethereum Address Sanitizer</h1>
-    <p>Paste your newline-separated Ethereum addresses below:</p>
-    <textarea id="input" rows="10" cols="50" placeholder="0x433F12B3204cE57E9a95dFC5C14092889F1Aef10&#10;0x3768E07A2960Ef1626008322C921b60431aF3e5B"></textarea>
-    <br/><br/>
-    <button onclick="sanitizeAddresses()">Sanitize</button>
-    <h2>Sanitized Addresses:</h2>
-    <textarea id="output" rows="10" cols="50" readonly></textarea>
+    <div class="container">
+      <h1>Ethereum Address Sanitizer</h1>
+      <p>Paste your newline-separated Ethereum addresses below:</p>
+      <textarea
+        id="input"
+        rows="10"
+        placeholder="0x433F12B3204cE57E9a95dFC5C14092889F1Aef10&#10;0x3768E07A2960Ef1626008322C921b60431aF3e5B"
+      ></textarea>
+      <p
+        id="input-line-count"
+        style="
+          margin-top: 0.5rem;
+          text-align: left;
+          color: #666;
+          font-size: 14px;
+        "
+      ></p>
+      <button onclick="sanitizeAddresses()">Sanitize</button>
+      <h2 style="margin-bottom: 0">Sanitized Addresses:</h2>
+      <p
+        id="summary"
+        style="
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+          text-align: left;
+          color: #666;
+          font-size: 14px;
+        "
+      ></p>
+      <div class="textarea-container">
+        <textarea id="output" rows="10" readonly></textarea>
+        <button id="copy-button" onclick="copyResults()">Copy</button>
+        <div id="copy-tooltip">Copied!</div>
+      </div>
+      <p
+        id="output-line-count"
+        style="
+          margin-top: 0.5rem;
+          text-align: left;
+          color: #666;
+          font-size: 14px;
+        "
+      ></p>
+    </div>
 
     <script>
+      // This function checks if a string is a valid Ethereum address.
+      function isValidEthereumAddress(address) {
+        return /^0x[0-9a-fA-F]{40}$/.test(address);
+      }
+
       // This function converts an Ethereum address to its EIP-55 checksummed version.
       function toChecksumAddress(address) {
         // Remove the 0x prefix (if present) and convert to lower-case.
-        var addr = address.toLowerCase().replace(/^0x/, '');
+        var addr = address.toLowerCase().replace(/^0x/, "");
         // Compute the Keccak-256 hash of the lower-case address.
         var hash = keccak256(addr);
-        var ret = '0x';
+        var ret = "0x";
         // Iterate over each character of the address.
         for (var i = 0; i < addr.length; i++) {
           // If the ith nibble of the hash is >= 8, the character should be uppercase.
@@ -40,17 +174,91 @@
       function sanitizeAddresses() {
         var inputText = document.getElementById("input").value;
         var lines = inputText.split("\n");
-        var sanitized = lines.map(function(line) {
-          var trimmed = line.trim();
-          if (trimmed === "") return "";
-          try {
-            return toChecksumAddress(trimmed);
-          } catch (err) {
-            return "ERROR with: " + trimmed;
+        let sanitizedCount = 0;
+        let invalidCount = 0;
+        let untouchedCount = 0;
+        var outputLines = [];
+
+        for (var i = 0; i < lines.length; i++) {
+          var trimmed = lines[i].trim();
+          if (trimmed === "") {
+            continue;
           }
-        }).join("\n");
-        document.getElementById("output").value = sanitized;
+
+          if (!isValidEthereumAddress(trimmed)) {
+            invalidCount++;
+          } else {
+            const checksummedAddress = toChecksumAddress(trimmed);
+            if (checksummedAddress === trimmed) {
+              untouchedCount++;
+            } else {
+              sanitizedCount++;
+            }
+            outputLines.push(checksummedAddress);
+          }
+        }
+
+        document.getElementById("output").value = outputLines.join("\n");
+        document.getElementById(
+          "output-line-count"
+        ).textContent = `${outputLines.length} addresses`;
+
+        const summaryParts = [];
+        if (sanitizedCount > 0)
+          summaryParts.push(
+            `${sanitizedCount} addresses sanitized to checksum address`
+          );
+        if (invalidCount > 0)
+          summaryParts.push(`removed ${invalidCount} invalid`);
+        if (untouchedCount > 0)
+          summaryParts.push(`${untouchedCount} not touched`);
+
+        if (summaryParts.length > 0) {
+          document.getElementById(
+            "summary"
+          ).textContent = `(${summaryParts.join(", ")})`;
+        } else {
+          document.getElementById("summary").textContent = "";
+        }
       }
+
+      function copyResults() {
+        const outputTextArea = document.getElementById("output");
+        if (outputTextArea.value.trim() === "") {
+          return; // Don't do anything for empty content
+        }
+        navigator.clipboard
+          .writeText(outputTextArea.value)
+          .then(() => {
+            const tooltip = document.getElementById("copy-tooltip");
+            tooltip.classList.add("visible");
+            setTimeout(() => {
+              tooltip.classList.remove("visible");
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error("Could not copy text: ", err);
+          });
+      }
+
+      const inputTextArea = document.getElementById("input");
+      const lineCountElement = document.getElementById("input-line-count");
+
+      function updateLineCount() {
+        const inputText = inputTextArea.value;
+        if (inputText.length === 0) {
+          lineCountElement.textContent = "0 addresses";
+          return;
+        }
+        const lines = inputText.split("\n");
+        const nonEmptyLines = lines.filter((line) => line.trim() !== "").length;
+        lineCountElement.textContent = `${nonEmptyLines} addresses`;
+      }
+
+      inputTextArea.addEventListener("input", updateLineCount);
+      // Initial count
+      updateLineCount();
+      document.getElementById("output-line-count").textContent = "0 addresses";
     </script>
   </body>
 </html>
