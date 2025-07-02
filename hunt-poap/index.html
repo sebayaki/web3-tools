@@ -5,57 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hunt Town POAP Owner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Ensure the pre tag wraps text and preserves whitespace */
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .btn-custom {
+            background-color: #FC6F6F;
+        }
+        .btn-custom:hover {
+            background-color: #E06262;
+        }
+        .ring-custom:focus {
+            --tw-ring-color: rgba(252, 111, 111, 0.5);
+        }
         #resultsContent {
             white-space: pre-wrap;
             word-wrap: break-word;
         }
     </style>
 </head>
-<body class="bg-black text-gray-100 flex items-center justify-center min-h-screen">
-    <div class="w-full max-w-2xl mx-auto p-4 sm:p-6 lg:p-8">
-        <div class="bg-gray-900 border border-[#FC6F6F] rounded-lg shadow-lg p-6 shadow-[#FC6F6F]/20">
-            <header class="text-center mb-6">
-                <h1 class="text-2xl sm:text-3xl font-bold text-white">Hunt Town POAP Owner</h1>
-                <p class="text-gray-400 mt-2">Find the owner of a Hunt Town POAP NFT on the Base network.</p>
-            </header>
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4">
 
-            <div class="space-y-4">
-                <div>
-                    <label for="tokenIds" class="block text-sm font-medium text-gray-300 mb-2">Token IDs (one per line)</label>
-                    <textarea id="tokenIds" name="tokenIds" rows="8" class="block w-full rounded-md border-gray-700 bg-black text-gray-200 shadow-sm focus:border-[#FC6F6F] focus:ring focus:ring-[#FC6F6F] focus:ring-opacity-50 sm:text-sm p-3 font-mono"></textarea>
-                </div>
+    <div class="w-full max-w-2xl mx-auto p-6 md:p-8 bg-gray-800 rounded-xl shadow-2xl">
 
-                <button id="fetchButton" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#FC6F6F] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FC6F6F] focus:ring-offset-gray-900 transition-colors">
-                    <svg id="loadingSpinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span id="buttonText">Fetch Owners</span>
-                </button>
-            </div>
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-white">Hunt Town POAP Owner</h1>
+            <p class="text-gray-400 mt-2">Find the owner of a Hunt Town POAP NFT on the Base network.</p>
+        </div>
 
-            <div id="results" class="mt-8">
-                <h2 class="text-lg font-semibold text-white border-b border-[#FC6F6F] pb-2 mb-4">Results</h2>
-                <pre id="resultsContent" class="text-gray-300 text-sm font-mono bg-black p-4 rounded-md h-64 overflow-y-auto">Results will appear here...</pre>
-            </div>
+        <div>
+            <label for="tokenIds" class="block text-sm font-medium text-gray-300 mb-2">Token IDs (one per line):</label>
+            <textarea id="tokenIds" name="tokenIds" rows="8" class="w-full p-4 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 ring-custom focus:border-transparent transition duration-200 text-gray-200 font-mono" placeholder="12345\n67890"></textarea>
+        </div>
+
+        <div class="mt-6 text-center">
+            <button id="fetchButton" class="w-full md:w-auto btn-custom text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105 duration-300 ease-in-out shadow-lg flex justify-center items-center">
+                <svg id="loadingSpinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span id="buttonText">Fetch Owners</span>
+            </button>
+        </div>
+
+        <div id="results" class="mt-8">
+            <h2 class="text-lg font-semibold text-white border-b border-gray-700 pb-2 mb-4">Results</h2>
+            <pre id="resultsContent" class="text-gray-300 text-sm font-mono bg-gray-900 p-4 rounded-md h-64 overflow-y-auto">Results will appear here...</pre>
         </div>
     </div>
 
-    <!-- Changed to type="module" to support direct import from the CDN -->
     <script type="module">
-        // Import viem functions directly from the specified ES Module URL
         import { createPublicClient, http, fallback } from 'https://esm.sh/v126/viem@2.31.4/es2022/viem.bundle.mjs';
 
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Configuration ---
             const CONTRACT_ADDRESS = '0xe589EbF53E2fAC89505169D77E8110b399C368f6';
             const ABI = [{
                 "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
@@ -91,7 +97,6 @@
                   "https://base.llamarpc.com",
             ];
 
-            // --- Viem Client Setup ---
             const transport = fallback(fallbackRpcs.map(url => http(url)), { rank: true });
 
             const client = createPublicClient({
@@ -99,24 +104,19 @@
                 transport,
             });
 
-            // --- DOM Elements ---
             const fetchButton = document.getElementById('fetchButton');
             const tokenIdsTextarea = document.getElementById('tokenIds');
             const resultsContent = document.getElementById('resultsContent');
             const loadingSpinner = document.getElementById('loadingSpinner');
             const buttonText = document.getElementById('buttonText');
 
-            // --- Event Listener ---
             fetchButton.addEventListener('click', handleFetchOwners);
 
-            /**
-             * Main function to handle the fetching process when the button is clicked.
-             */
             async function handleFetchOwners() {
                 const tokenIds = tokenIdsTextarea.value
                     .split('\n')
                     .map(id => id.trim())
-                    .filter(id => id !== '' && /^\d+$/.test(id)); // Filter empty lines & ensure they are digits
+                    .filter(id => id !== '' && /^\d+$/.test(id));
 
                 if (tokenIds.length === 0) {
                     resultsContent.innerText = 'Please enter at least one valid token ID.';
@@ -142,42 +142,33 @@
                 setLoading(false);
             }
 
-            /**
-             * Renders the fetched data into the results container as plain text.
-             */
             function displayResults(results) {
                 if (results.length === 0) {
                     resultsContent.innerText = 'No results to display.';
                     return;
                 }
 
-                // Create a document fragment to build the output efficiently
                 const fragment = document.createDocumentFragment();
 
                 results.forEach((result, index) => {
                     const line = document.createElement('span');
                     if (result.status === 'fulfilled') {
-                        line.innerHTML = `<span style="color: #FC6F6F;">#${result.id}</span> - ${result.owner}`;
+                        line.innerHTML = `<span class="text-purple-400">#${result.id}</span> - ${result.owner}`;
                     } else {
                         console.error(`Failed to fetch owner for token #${result.id}:`, result.error);
-                        line.innerHTML = `<span style="color: #FC6F6F;">#${result.id}</span> - <span class="text-red-500">Error: Not a valid token or failed to fetch.</span>`;
+                        line.innerHTML = `<span class="text-purple-400">#${result.id}</span> - <span class="text-red-400">Error: Not a valid token or failed to fetch.</span>`;
                     }
                     fragment.appendChild(line);
 
-                    // Add a new line character after each line except the last one
                     if (index < results.length - 1) {
                         fragment.appendChild(document.createTextNode('\n'));
                     }
                 });
 
-                // Clear previous content and append the new fragment
                 resultsContent.innerHTML = '';
                 resultsContent.appendChild(fragment);
             }
 
-            /**
-             * Toggles the loading state for the button and spinner.
-             */
             function setLoading(isLoading) {
                 fetchButton.disabled = isLoading;
                 if (isLoading) {
