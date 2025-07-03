@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HUNT & MINT Price Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      }
+      .font-mono {
+        font-family: "Roboto Mono", monospace;
+      }
+      .hunt-color {
+        color: rgb(252 111 111);
+      }
+      .mint-color {
+        color: rgb(21 230 183);
+      }
+      .hunt-bg {
+        background: linear-gradient(
+          135deg,
+          rgba(252, 111, 111, 0.1) 0%,
+          rgba(252, 111, 111, 0.05) 100%
+        );
+        border: 1px solid rgba(252, 111, 111, 0.2);
+      }
+      .mint-bg {
+        background: linear-gradient(
+          135deg,
+          rgba(21, 230, 183, 0.1) 0%,
+          rgba(21, 230, 183, 0.05) 100%
+        );
+        border: 1px solid rgba(21, 230, 183, 0.2);
+      }
+      .card {
+        backdrop-filter: blur(10px);
+      }
+      .price-display {
+        text-shadow: 0 0 20px currentColor;
+        transition: all 0.3s ease;
+      }
+      .price-display.updating {
+        transform: scale(1.05);
+        filter: brightness(1.2);
+      }
+      .network-badge {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4"
+  >
+    <div class="w-full max-w-6xl mx-auto py-4">
+      <!-- HUNT Section -->
+      <div class="mb-8">
+        <h2 class="text-4xl font-bold hunt-color text-center mb-6">HUNT</h2>
+        <div class="grid grid-cols-2 gap-3 md:gap-6 max-w-3xl mx-auto">
+          <!-- HUNT Ethereum -->
+          <div
+            class="card hunt-card hunt-bg rounded-xl shadow-2xl p-4 md:p-6 text-center relative"
+          >
+            <img
+              src="https://dd.dexscreener.com/ds-data/chains/ethereum.png"
+              alt="Ethereum"
+              class="absolute top-3 right-3 w-4 h-4 md:w-5 md:h-5"
+            />
+            <div class="mb-3 md:mb-4">
+              <h3 class="text-lg md:text-xl font-bold hunt-color mb-1">HUNT</h3>
+            </div>
+            <div class="mb-3 md:mb-4">
+              <div
+                id="hunt-eth-price"
+                class="text-xl md:text-3xl font-mono font-bold price-display hunt-color"
+              >
+                <span class="opacity-50">Loading...</span>
+              </div>
+              <div class="text-xs md:text-sm text-gray-400 mt-1">USDC</div>
+            </div>
+            <div
+              class="text-xs text-gray-500 flex items-center justify-center space-x-1"
+            >
+              <div class="w-1 h-1 bg-gray-500 rounded-full"></div>
+              <span>Uniswap V3</span>
+            </div>
+          </div>
+
+          <!-- HUNT Base -->
+          <div
+            class="card hunt-card hunt-bg rounded-xl shadow-2xl p-4 md:p-6 text-center relative"
+          >
+            <img
+              src="https://dd.dexscreener.com/ds-data/chains/base.png"
+              alt="Base"
+              class="absolute top-3 right-3 w-4 h-4 md:w-5 md:h-5"
+            />
+            <div class="mb-3 md:mb-4">
+              <h3 class="text-lg md:text-xl font-bold hunt-color mb-1">HUNT</h3>
+            </div>
+            <div class="mb-3 md:mb-4">
+              <div
+                id="hunt-base-price"
+                class="text-xl md:text-3xl font-mono font-bold price-display hunt-color"
+              >
+                <span class="opacity-50">Loading...</span>
+              </div>
+              <div class="text-xs md:text-sm text-gray-400 mt-1">USDC</div>
+            </div>
+            <div
+              class="text-xs text-gray-500 flex items-center justify-center space-x-1"
+            >
+              <div class="w-1 h-1 bg-gray-500 rounded-full"></div>
+              <span>Uniswap V3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MINT Section -->
+      <div class="mb-8">
+        <h2 class="text-4xl font-bold mint-color text-center mb-6">MINT</h2>
+        <div class="grid grid-cols-2 gap-3 md:gap-6 max-w-3xl mx-auto">
+          <!-- MINT Base (Uniswap) -->
+          <div
+            class="card mint-card mint-bg rounded-xl shadow-2xl p-4 md:p-6 text-center relative"
+          >
+            <img
+              src="https://dd.dexscreener.com/ds-data/chains/base.png"
+              alt="Base"
+              class="absolute top-3 right-3 w-4 h-4 md:w-5 md:h-5"
+            />
+            <div class="mb-3 md:mb-4">
+              <h3 class="text-lg md:text-xl font-bold mint-color mb-1">MINT</h3>
+            </div>
+            <div class="mb-3 md:mb-4">
+              <div
+                id="mint-base-price"
+                class="text-xl md:text-3xl font-mono font-bold price-display mint-color"
+              >
+                <span class="opacity-50">Loading...</span>
+              </div>
+              <div class="text-xs md:text-sm text-gray-400 mt-1">USDC</div>
+            </div>
+            <div
+              class="text-xs text-gray-500 flex items-center justify-center space-x-1"
+            >
+              <div class="w-1 h-1 bg-gray-500 rounded-full"></div>
+              <span>Uniswap V3</span>
+            </div>
+          </div>
+
+          <!-- MINT Base (Bonding Curve) -->
+          <div
+            class="card mint-card mint-bg rounded-xl shadow-2xl p-4 md:p-6 text-center relative"
+          >
+            <img
+              src="https://dd.dexscreener.com/ds-data/chains/base.png"
+              alt="Base"
+              class="absolute top-3 right-3 w-4 h-4 md:w-5 md:h-5"
+            />
+            <div class="mb-3 md:mb-4">
+              <h3 class="text-lg md:text-xl font-bold mint-color mb-1">MINT</h3>
+            </div>
+            <div class="mb-3 md:mb-4">
+              <div
+                id="mint-bond-price"
+                class="text-xl md:text-3xl font-mono font-bold price-display mint-color"
+              >
+                <span class="opacity-50">Loading...</span>
+              </div>
+              <div class="text-xs md:text-sm text-gray-400 mt-1">USDC</div>
+            </div>
+            <div
+              class="text-xs text-gray-500 flex items-center justify-center space-x-1"
+            >
+              <div class="w-1 h-1 bg-gray-500 rounded-full"></div>
+              <span>MintClub V2 Bond</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mb-8">
+        <div
+          class="mt-2 inline-flex items-center space-x-2 text-xs text-gray-500"
+        >
+          <div
+            class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"
+          ></div>
+          <span>Updates every 5 seconds</span>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import {
+        createPublicClient,
+        http,
+        fallback,
+      } from "https://esm.sh/v126/viem@2.31.4/es2022/viem.bundle.mjs";
+      import { mainnet, base } from "https://esm.sh/v126/viem@2.31.4/chains";
+
+      const HUNT_ETH = "0x9AAb071B4129B083B01cB5A0Cb513Ce7ecA26fa5";
+      const HUNT_BASE = "0x37f0c2915CeCC7e977183B8543Fc0864d03E064C";
+      const MINT_BASE = "0xFf45161474C39cB00699070Dd49582e417b57a7E";
+      const USDC_ETH = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+      const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+      const WETH_ETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+      const WETH_BASE = "0x4200000000000000000000000000000000000006";
+
+      // Updated to use correct V3 Quoter addresses
+      const UNISWAP_V3_QUOTER_ADDRESS_ETH =
+        "0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
+      const UNISWAP_V3_QUOTER_ADDRESS_BASE =
+        "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a";
+
+      // MintClub bonding curve contract
+      const MINTCLUB_BOND_CONTRACT =
+        "0xc5a076cad94176c2996B32d8466Be1cE757FAa27";
+
+      // --- RPC Configuration ---
+      const mainnetRpcs = [
+        "https://ethereum-rpc.publicnode.com",
+        "https://eth-pokt.nodies.app",
+        "https://gateway.tenderly.co/public/mainnet",
+        "https://rpc.flashbots.net/fast",
+        "https://rpc.flashbots.net",
+        "https://rpc.mevblocker.io",
+        "https://rpc.mevblocker.io/fast",
+        "https://rpc.mevblocker.io/noreverts",
+        "https://rpc.mevblocker.io/fullprivacy",
+        "https://gateway.subquery.network/rpc/eth",
+        "https://mainnet.gateway.tenderly.co",
+        "https://core.gashawk.io/rpc",
+        "https://eth.meowrpc.com",
+      ];
+
+      const baseRpcs = [
+        "https://base-rpc.publicnode.com",
+        // "https://base.drpc.org",
+        "https://base-pokt.nodies.app",
+        "https://base.rpc.subquery.network/public",
+        "https://endpoints.omniatech.io/v1/base/mainnet/public",
+        "https://gateway.tenderly.co/public/base",
+        "https://base.blockpi.network/v1/rpc/public",
+        "https://1rpc.io/base",
+        "https://base-mainnet.public.blastapi.io",
+        "https://base.meowrpc.com",
+      ];
+
+      const ethClient = createPublicClient({
+        chain: mainnet,
+        transport: fallback(
+          mainnetRpcs.map((url) => http(url)),
+          { rank: false }
+        ),
+      });
+
+      const baseClient = createPublicClient({
+        chain: base,
+        transport: fallback(
+          baseRpcs.map((url) => http(url)),
+          { rank: false }
+        ),
+      });
+
+      // --- ABI & Contract Logic ---
+      const quoterAbi = [
+        {
+          name: "quoteExactInputSingle",
+          type: "function",
+          inputs: [
+            { type: "address", name: "tokenIn" },
+            { type: "address", name: "tokenOut" },
+            { type: "uint24", name: "fee" },
+            { type: "uint256", name: "amountIn" },
+            { type: "uint160", name: "sqrtPriceLimitX96" },
+          ],
+          outputs: [{ type: "uint256", name: "amountOut" }],
+          stateMutability: "nonpayable",
+        },
+        {
+          name: "quoteExactInput",
+          type: "function",
+          inputs: [
+            { type: "bytes", name: "path" },
+            { type: "uint256", name: "amountIn" },
+          ],
+          outputs: [
+            { type: "uint256", name: "amountOut" },
+            { type: "uint160[]", name: "sqrtPriceX96AfterList" },
+            { type: "uint32[]", name: "initializedTicksCrossedList" },
+            { type: "uint256", name: "gasEstimate" },
+          ],
+          stateMutability: "nonpayable",
+        },
+      ];
+
+      const bondAbi = [
+        {
+          name: "priceForNextMint",
+          type: "function",
+          inputs: [{ type: "address", name: "token" }],
+          outputs: [{ type: "uint128", name: "" }],
+          stateMutability: "view",
+        },
+      ];
+
+      // Helper function to encode path for multi-hop swaps
+      function encodePath(tokens, fees) {
+        let path = "0x";
+        for (let i = 0; i < tokens.length; i++) {
+          path += tokens[i].slice(2); // Remove 0x prefix
+          if (i < fees.length) {
+            path += fees[i].toString(16).padStart(6, "0"); // Fee as 3 bytes
+          }
+        }
+        return path;
+      }
+
+      async function getPrice(
+        client,
+        tokenIn,
+        tokenOut,
+        decimalsIn,
+        decimalsOut
+      ) {
+        const amountIn = 10n ** BigInt(decimalsIn);
+        const quoterAddress =
+          client.chain.id === 1
+            ? UNISWAP_V3_QUOTER_ADDRESS_ETH
+            : UNISWAP_V3_QUOTER_ADDRESS_BASE;
+        const wethAddress = client.chain.id === 1 ? WETH_ETH : WETH_BASE;
+
+        // Try different strategies in order of preference
+        const strategies = [
+          // Direct pair with different fee tiers
+          { type: "direct", fee: 3000 },
+          // Multi-hop through WETH
+          { type: "multihop", fees: [3000, 500] }, // TOKEN -> WETH (0.3%) -> USDC (0.05%)
+          { type: "multihop", fees: [3000, 3000] }, // TOKEN -> WETH (0.3%) -> USDC (0.3%)
+        ];
+
+        for (const strategy of strategies) {
+          try {
+            let result;
+
+            if (strategy.type === "direct") {
+              // Direct swap
+              result = await client.readContract({
+                address: quoterAddress,
+                abi: quoterAbi,
+                functionName: "quoteExactInputSingle",
+                args: [tokenIn, tokenOut, strategy.fee, amountIn, 0],
+              });
+              return Number(result) / 10 ** decimalsOut;
+            } else {
+              // Multi-hop swap through WETH
+              const path = encodePath(
+                [tokenIn, wethAddress, tokenOut],
+                strategy.fees
+              );
+
+              result = await client.readContract({
+                address: quoterAddress,
+                abi: quoterAbi,
+                functionName: "quoteExactInput",
+                args: [path, amountIn],
+              });
+
+              // quoteExactInput returns [amountOut, sqrtPriceX96AfterList, initializedTicksCrossedList, gasEstimate]
+              return Number(result[0]) / 10 ** decimalsOut;
+            }
+          } catch (error) {
+            // Only log direct pair failures as debug (expected to fail)
+            if (strategy.type === "direct") {
+              console.debug(
+                `Direct pair ${strategy.fee} not available for ${tokenIn.slice(
+                  0,
+                  6
+                )}...`
+              );
+            } else {
+              console.log(
+                `Multi-hop strategy ${strategy.fees} failed for ${tokenIn.slice(
+                  0,
+                  6
+                )}...: ${error.message}`
+              );
+            }
+            continue;
+          }
+        }
+
+        console.error(
+          `All strategies failed for ${tokenIn.slice(0, 6)}... on ${
+            client.chain.name
+          }`
+        );
+        return null;
+      }
+
+      async function getMintPriceFromBondingCurve(client, huntPriceInUsdc) {
+        try {
+          // Get MINT price in HUNT from bonding curve
+          const mintPriceInHunt = await client.readContract({
+            address: MINTCLUB_BOND_CONTRACT,
+            abi: bondAbi,
+            functionName: "priceForNextMint",
+            args: [MINT_BASE],
+          });
+
+          // Convert to number (assuming 18 decimals for HUNT)
+          const mintPriceInHuntNumber = Number(mintPriceInHunt) / 10 ** 18;
+
+          // Convert to USDC: MINT price in HUNT * HUNT price in USDC
+          return mintPriceInHuntNumber * huntPriceInUsdc;
+        } catch (error) {
+          console.error("Error getting MINT price from bonding curve:", error);
+          return null;
+        }
+      }
+
+      // --- UI Update Logic ---
+      function setPrice(elementId, price) {
+        const element = document.getElementById(elementId);
+        if (price !== null) {
+          // Add updating animation
+          element.classList.add("updating");
+
+          // Update the price with up to 5 decimal places
+          const formattedPrice = `$${price.toFixed(5)}`;
+          element.innerHTML = formattedPrice;
+
+          // Remove animation after a short delay
+          setTimeout(() => {
+            element.classList.remove("updating");
+          }, 300);
+        } else {
+          element.innerHTML = `<span class="text-red-500">Error</span>`;
+        }
+      }
+
+      async function updatePrices() {
+        // Update each price individually as they load
+        getPrice(ethClient, HUNT_ETH, USDC_ETH, 18, 6).then((price) => {
+          setPrice("hunt-eth-price", price);
+        });
+
+        getPrice(baseClient, HUNT_BASE, USDC_BASE, 18, 6).then(
+          (huntBasePrice) => {
+            setPrice("hunt-base-price", huntBasePrice);
+
+            // Get MINT price from bonding curve using HUNT Base price (only if HUNT price loaded)
+            if (huntBasePrice) {
+              getMintPriceFromBondingCurve(baseClient, huntBasePrice).then(
+                (mintBondPrice) => {
+                  setPrice("mint-bond-price", mintBondPrice);
+                }
+              );
+            }
+          }
+        );
+
+        getPrice(baseClient, MINT_BASE, USDC_BASE, 18, 6).then((price) => {
+          setPrice("mint-base-price", price);
+        });
+      }
+
+      // --- Initial Load & Interval ---
+      updatePrices();
+      setInterval(updatePrices, 5000); // update every 5 seconds
+    </script>
+  </body>
+</html>
