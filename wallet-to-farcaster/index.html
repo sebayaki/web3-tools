@@ -83,6 +83,33 @@
 
       <!-- Results Section -->
       <div id="results-container" class="mt-8">
+        <!-- View Toggle -->
+        <div id="view-toggle" class="hidden mb-6">
+          <div
+            class="flex justify-center space-x-1 bg-gray-700 p-1 rounded-lg w-fit mx-auto"
+          >
+            <button
+              id="detailed-view-btn"
+              class="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 bg-gray-600 text-white"
+            >
+              Detailed View
+            </button>
+            <button
+              id="simple-view-btn"
+              class="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-300 hover:text-white"
+            >
+              Simple Text
+            </button>
+          </div>
+          <div id="copy-section" class="hidden mt-4 text-center">
+            <button
+              id="copy-btn"
+              class="bg-gray-600 hover:bg-gray-500 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+            >
+              Copy to Clipboard
+            </button>
+          </div>
+        </div>
         <!-- Loading Indicator -->
         <div id="loading" class="hidden text-center text-gray-400">
           <svg
@@ -124,9 +151,18 @@
       const resultsContainer = document.getElementById("results-list");
       const loadingIndicator = document.getElementById("loading");
       const errorMessageDiv = document.getElementById("error-message");
+      const viewToggle = document.getElementById("view-toggle");
+      const detailedViewBtn = document.getElementById("detailed-view-btn");
+      const simpleViewBtn = document.getElementById("simple-view-btn");
+      const copySection = document.getElementById("copy-section");
+      const copyBtn = document.getElementById("copy-btn");
 
       // The base URL for the Hunt Town API
       const API_BASE_URL = "https://fc.hunt.town/users/byWallets";
+
+      // View state
+      let currentView = "detailed"; // "detailed" or "simple"
+      let currentResults = []; // Store results for view switching
 
       // --- Main Logic ---
       findBtn.addEventListener("click", async () => {
@@ -135,6 +171,9 @@
         errorMessageDiv.classList.add("hidden");
         errorMessageDiv.textContent = "";
         loadingIndicator.classList.remove("hidden");
+        viewToggle.classList.add("hidden");
+        currentView = "detailed";
+        currentResults = [];
 
         // 2. Get and clean input addresses
         const inputAddresses = addressesInput.value
@@ -167,73 +206,17 @@
             });
           });
 
-          // 4. Find and display results
-          inputAddresses.forEach((address) => {
+          // 4. Store results and display
+          currentResults = inputAddresses.map((address) => {
             const user = userMap.get(address.toLowerCase());
-            const resultElement = document.createElement("div");
-            resultElement.className = "bg-gray-700/50 p-4 rounded-lg";
-
-            if (user) {
-              // If a user is found, display comprehensive information
-              const isPrimary =
-                user.primaryAddress.toLowerCase() === address.toLowerCase();
-              const primaryBadge = isPrimary
-                ? '<span class="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded-full ml-2">Primary</span>'
-                : "";
-
-              resultElement.innerHTML = `
-                            <div class="flex items-start space-x-4">
-                                <img src="${
-                                  user.pfpUrl ||
-                                  "https://via.placeholder.com/48"
-                                }" alt="Profile" class="w-12 h-12 rounded-full flex-shrink-0" onerror="this.src='https://via.placeholder.com/48'">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center flex-wrap gap-2 mb-2">
-                                        <a href="https://farcaster.xyz/${
-                                          user.username
-                                        }" target="_blank" rel="noopener noreferrer" class="bg-green-500/20 hover:bg-green-600/30 text-green-300 text-sm font-semibold px-3 py-1 rounded-full transition-colors duration-200">
-                                            @${user.username}
-                                        </a>
-                                        ${primaryBadge}
-                                        ${
-                                          user.proSubscribed
-                                            ? '<span class="bg-purple-500/20 text-purple-300 text-xs px-2 py-1 rounded-full">Pro</span>'
-                                            : ""
-                                        }
-                                    </div>
-                                    <div class="text-white font-medium mb-1">${
-                                      user.displayName || user.username
-                                    }</div>
-                                    ${
-                                      user.bio
-                                        ? `<div class="text-gray-400 text-sm mb-2">${user.bio}</div>`
-                                        : ""
-                                    }
-                                    <div class="text-gray-300 font-mono text-xs break-all mb-2">${address}</div>
-                                    <div class="flex items-center space-x-4 text-xs text-gray-400">
-                                        <span>FID: ${user.fid}</span>
-                                        <span>Followers: ${user.followersCount.toLocaleString()}</span>
-                                        <span>Following: ${user.followingCount.toLocaleString()}</span>
-                                        ${
-                                          user.twitter
-                                            ? `<a href="https://twitter.com/${user.twitter}" target="_blank" class="text-blue-400 hover:text-blue-300">Twitter</a>`
-                                            : ""
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-            } else {
-              // If not found, display the "Not Found" message
-              resultElement.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <span class="text-gray-400 font-mono text-sm break-all pr-2">${address}</span>
-                                <span class="bg-red-500/20 text-red-300 text-xs font-semibold px-3 py-1 rounded-full flex-shrink-0">Not Found</span>
-                            </div>
-                        `;
-            }
-            resultsContainer.appendChild(resultElement);
+            return { address, user };
           });
+
+          // Show view toggle
+          viewToggle.classList.remove("hidden");
+
+          // Display results in current view
+          displayResults();
         } catch (error) {
           console.error("An error occurred:", error);
           showError(
@@ -245,7 +228,153 @@
         }
       });
 
+      // --- View Toggle Event Listeners ---
+      detailedViewBtn.addEventListener("click", () => {
+        if (currentView !== "detailed") {
+          currentView = "detailed";
+          updateViewButtons();
+          displayResults();
+        }
+      });
+
+      simpleViewBtn.addEventListener("click", () => {
+        if (currentView !== "simple") {
+          currentView = "simple";
+          updateViewButtons();
+          displayResults();
+        }
+      });
+
+      copyBtn.addEventListener("click", () => {
+        const simpleText = generateSimpleText();
+        navigator.clipboard
+          .writeText(simpleText)
+          .then(() => {
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = "Copied!";
+            copyBtn.classList.add("bg-green-600");
+            copyBtn.classList.remove("bg-gray-600");
+            setTimeout(() => {
+              copyBtn.textContent = originalText;
+              copyBtn.classList.remove("bg-green-600");
+              copyBtn.classList.add("bg-gray-600");
+            }, 2000);
+          })
+          .catch(() => {
+            alert("Failed to copy to clipboard");
+          });
+      });
+
       // --- Helper Functions ---
+      function updateViewButtons() {
+        if (currentView === "detailed") {
+          detailedViewBtn.classList.add("bg-gray-600", "text-white");
+          detailedViewBtn.classList.remove("text-gray-300");
+          simpleViewBtn.classList.remove("bg-gray-600", "text-white");
+          simpleViewBtn.classList.add("text-gray-300");
+          copySection.classList.add("hidden");
+        } else {
+          simpleViewBtn.classList.add("bg-gray-600", "text-white");
+          simpleViewBtn.classList.remove("text-gray-300");
+          detailedViewBtn.classList.remove("bg-gray-600", "text-white");
+          detailedViewBtn.classList.add("text-gray-300");
+          copySection.classList.remove("hidden");
+        }
+      }
+
+      function displayResults() {
+        resultsContainer.innerHTML = "";
+
+        if (currentView === "detailed") {
+          displayDetailedResults();
+        } else {
+          displaySimpleResults();
+        }
+      }
+
+      function displayDetailedResults() {
+        currentResults.forEach(({ address, user }) => {
+          const resultElement = document.createElement("div");
+          resultElement.className = "bg-gray-700/50 p-4 rounded-lg";
+
+          if (user) {
+            // If a user is found, display comprehensive information
+            resultElement.innerHTML = `
+              <div class="flex items-start space-x-4">
+                  <img src="${
+                    user.pfpUrl || "https://via.placeholder.com/48"
+                  }" alt="Profile" class="w-12 h-12 rounded-full flex-shrink-0" onerror="this.src='https://via.placeholder.com/48'">
+                  <div class="flex-1 min-w-0">
+                      <div class="flex items-center flex-wrap gap-2 mb-2">
+                          <a href="https://farcaster.xyz/${
+                            user.username
+                          }" target="_blank" rel="noopener noreferrer" class="bg-green-500/20 hover:bg-green-600/30 text-green-300 text-sm font-semibold px-3 py-1 rounded-full transition-colors duration-200">
+                              @${user.username}
+                          </a>
+                          ${
+                            user.proSubscribed
+                              ? '<span class="bg-purple-500/20 text-purple-300 text-xs px-2 py-1 rounded-full">Pro</span>'
+                              : ""
+                          }
+                      </div>
+                      <div class="text-white font-medium mb-1">${
+                        user.displayName || user.username
+                      }</div>
+                      ${
+                        user.bio
+                          ? `<div class="text-gray-400 text-sm mb-2">${user.bio}</div>`
+                          : ""
+                      }
+                      <div class="text-gray-300 font-mono text-xs break-all mb-2">${address}</div>
+                      <div class="flex items-center space-x-4 text-xs text-gray-400">
+                          <span>FID: ${user.fid}</span>
+                          <span>Followers: ${user.followersCount.toLocaleString()}</span>
+                          <span>Following: ${user.followingCount.toLocaleString()}</span>
+                          ${
+                            user.twitter
+                              ? `<a href="https://twitter.com/${user.twitter}" target="_blank" class="text-blue-400 hover:text-blue-300">Twitter</a>`
+                              : ""
+                          }
+                      </div>
+                  </div>
+              </div>
+            `;
+          } else {
+            // If not found, display the "Not Found" message
+            resultElement.innerHTML = `
+              <div class="flex items-center justify-between">
+                  <span class="text-gray-400 font-mono text-sm break-all pr-2">${address}</span>
+                  <span class="bg-red-500/20 text-red-300 text-xs font-semibold px-3 py-1 rounded-full flex-shrink-0">Not Found</span>
+              </div>
+            `;
+          }
+          resultsContainer.appendChild(resultElement);
+        });
+      }
+
+      function displaySimpleResults() {
+        const simpleText = generateSimpleText();
+        const resultElement = document.createElement("div");
+        resultElement.className =
+          "bg-gray-900 p-4 rounded-lg border border-gray-700";
+        resultElement.innerHTML = `
+          <pre class="text-gray-300 font-mono text-sm whitespace-pre-wrap">${simpleText}</pre>
+        `;
+        resultsContainer.appendChild(resultElement);
+      }
+
+      function generateSimpleText() {
+        return currentResults
+          .map(({ address, user }) => {
+            if (user) {
+              return `${address} - @${user.username}`;
+            } else {
+              return `${address} - Not Found`;
+            }
+          })
+          .join("\n");
+      }
+
       function showError(message) {
         errorMessageDiv.textContent = message;
         errorMessageDiv.classList.remove("hidden");
