@@ -188,15 +188,28 @@
         }
 
         try {
-          // 3. Fetch user data from Hunt Town API
-          const addressesParam = inputAddresses.join(",");
-          const apiUrl = `${API_BASE_URL}/${addressesParam}`;
-
-          const response = await fetch(apiUrl);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch data. Status: ${response.status}`);
+          // 3. Fetch user data from Hunt Town API (batch by 100 addresses to avoid URL limit)
+          const BATCH_SIZE = 100;
+          const batches = [];
+          for (let i = 0; i < inputAddresses.length; i += BATCH_SIZE) {
+            batches.push(inputAddresses.slice(i, i + BATCH_SIZE));
           }
-          const users = await response.json();
+
+          // Fetch all batches in parallel
+          const batchPromises = batches.map(async (batch) => {
+            const addressesParam = batch.join(",");
+            const apiUrl = `${API_BASE_URL}/${addressesParam}`;
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch data. Status: ${response.status}`
+              );
+            }
+            return response.json();
+          });
+
+          const batchResults = await Promise.all(batchPromises);
+          const users = batchResults.flat();
 
           // Create a Map for efficient lookups by address
           const userMap = new Map();
